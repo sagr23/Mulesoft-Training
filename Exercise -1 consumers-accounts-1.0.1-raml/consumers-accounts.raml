@@ -1,0 +1,60 @@
+#%RAML 1.0
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/e9e3652f-9f3f-4f34-92cc-9e814e5f3ff8/ # 
+title: Consumers Accounts API
+
+types:
+  ConsumerAccounts: !include datatypes/Accounts.raml
+
+
+/accounts:
+  get:
+    headers:
+      Requester-ID:
+        type: string
+        required: true
+    queryParameters:
+      type: 
+        required: true
+        type: string
+        enum: [personal, business]
+      name:
+        required: false
+        type: string
+      country:
+        required: false
+        type: string
+    responses:
+      200:
+        body:
+          application/json:
+            type: ConsumerAccounts[]
+            examples:
+              output: !include examples/consumerAccountsExample.raml
+      400:
+        body:
+          application/json:
+            example:
+              message: Error
+
+  post:
+    headers:
+      Requester-ID:
+        type: string
+        required: true
+    body:
+      application/json:
+        type: ConsumerAccounts[]
+        examples:
+          output: !include examples/ConsumerAccountsNotIDExample.raml
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              message: Account Created
+      400:
+        body:
+          application/json:
+            example:
+              message: Error
+      
