@@ -1,0 +1,9 @@
+https://anypoint.mulesoft.com/exchange/portals/sapient-1102/4c822e59-609c-4b1b-a695-cbf81d9ea7de/american-flights-api/minor/1.0/console/method/%2358/
+
+
+
+Client ID:
+c86eef96cac64f20bae7c73df3a198bc
+
+Client Secret:
+f612c5EbA9A245BAba2BD6290b1D0c92
