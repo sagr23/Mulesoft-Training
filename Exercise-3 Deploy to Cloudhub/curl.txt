@@ -1,0 +1,1 @@
+curl --location --request GET 'http://training4-american-ws-sagr23.us-e2.cloudhub.io/api/flights?destination=SFO'
