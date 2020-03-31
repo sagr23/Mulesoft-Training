@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="51720489-cf20-434d-99ca-df402fe02bf7" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="031d3252-a18e-4d33-92ce-0793c84e63d1" >
+		<wsc:connection wsdlLocation="CountriesCurrency.wsdl" service="CountryInfoService" port="CountryInfoServiceSoap" address="http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso" />
+	</wsc:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="04a564c7-8cea-4ace-9c6b-22918e578bb8" >
+		<http:request-connection host="customerapplicationproxy.us-e2.cloudhub.io" port="80" />
+	</http:request-config>
+	<flow name="Call_Customers_Mule_Application" doc:id="916f6a20-64b2-4c2e-9b6e-1aa123f4d9ab" >
+		<http:listener doc:name="Listener" doc:id="82de028d-e52e-48b7-b67f-47631e82e61f" config-ref="HTTP_Listener_config" path="/web/fetchCustomers" allowedMethods="GET"/>
+		<http:request method="GET" doc:name="Call GET /customer" doc:id="22bd8eac-e3a6-4240-a877-ec5f0ada9ee7" config-ref="HTTP_Request_configuration" path="/customer">
+			<http:headers ><![CDATA[#[output application/json
+---
+{
+	"client_secret" : "F6836A60526C4e79b6A0a5e6023dF9eF",
+	"client_id" : "04ccd9f474e4482eb4d6d53168c43663"
+	
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="34fad7f3-9f1f-4575-a422-70fc43864b32" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="95629785-87e1-4d32-849f-e792ce3458d7" message='#["\nREST Web Service called"]'/>
+	</flow>
+	<flow name="SOAP_WebService" doc:id="2c925517-6d30-4a52-a4de-42f3d027e791" >
+		<http:listener doc:name="Listener" doc:id="53da8e7a-4dad-40d4-a8da-bcce1ef1744a" config-ref="HTTP_Listener_config" path="/web/checkCountryCapital" allowedMethods="POST"/>
+		<set-variable value="#[upper(payload.countryISOCode)]" doc:name="Set Variable" doc:id="86ea91f5-3a16-414c-80fb-756b5bdedf4b" variableName="countryISOCode"/>
+		<ee:transform doc:name="Transform Message" doc:id="d802aff2-68e7-4f8b-a90d-1eb1df9ec03b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.oorsprong.org/websamples.countryinfo
+---
+{
+	ns0#CapitalCity: {
+		ns0#sCountryISOCode: vars.countryISOCode
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Consume" doc:id="c2c51012-c5aa-4c9c-820a-b36168154bc4" config-ref="Web_Service_Consumer_Config" operation="CapitalCity"/>
+		<ee:transform doc:name="Transform Message" doc:id="e5938e6c-a604-4201-a2d1-be5b58baeb0f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Country_Code": vars.countryISOCode ,
+	"Capital_City": payload.body.CapitalCityResponse.CapitalCityResult
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="Error_Handling_AND_Masking" doc:id="ec5c4ad7-7777-41d3-99ce-a7259e76ac99" >
+		<http:listener doc:name="Listener" doc:id="6f4cb3c8-d998-49e4-9bbf-16271245287e" config-ref="HTTP_Listener_config" path="/web/errorHandling" allowedMethods="POST">
+			<http:error-response statusCode="#[vars.statusCode]">
+				<http:body ><![CDATA[#[output application/json --- payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<choice doc:name="Choice" doc:id="4e5e90d3-0eee-4bd2-a2b3-76248c09a5e7" >
+			<when expression="#[(payload[0] == null)]">
+				<raise-error doc:name="Raise error" doc:id="e63edaa3-9570-4bf4-a2d0-8bd0041511f9" type="PRECONDITION:MISSING_PAYLOAD" description="Payload is missing"/>
+			</when>
+			<when expression="#[(payload.accno == null or payload.ssn == null or isBlank(payload.accno) or isBlank(payload.ssn))]">
+				<raise-error doc:name="Raise error" doc:id="6db7fa47-81ba-4ac6-b78f-00dba1633f14" type="PRECONDITION:MISSING_ACCOUNTNO_SSN" description="Acoount Number or SSN Number is Missing" />
+			</when>
+			<when expression='#[payload.ssn != "1234567"]'>
+				<raise-error doc:name="Raise error" doc:id="4423e7d0-c126-4cf9-8c00-7c209805b752" type="DATA:UNAUTHORIZED" description="SSN Value passed is not correct"/>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger" doc:id="662ff750-1039-4bf6-b393-dbe787cc6297" message='#[{
+		Name: payload.Name,
+		Account_number: "*******",
+		age: payload.age,
+		ssn: "*******"
+	
+}]'/>
+				<ee:transform doc:name="Transform Message" doc:id="2cb639c9-e090-4bb6-b0c8-61c52d109a4c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+		Name: payload.Name,
+		Account_number: "*******",
+		Age: payload.age,
+		SSN: "*******"
+	
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ba32dbc8-99bf-4d17-823f-e7d6cb19662b" type="PRECONDITION:MISSING_PAYLOAD">
+				<ee:transform doc:name="Transform Message" doc:id="979554c6-c936-483c-aa80-76b991a848c6" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"message": "Payload cannot be empty"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="Set Variable" doc:id="8261dd20-7ca4-448c-8f4f-48202d0b9cfe" variableName="statusCode"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fcf0458c-4a44-4cce-8d7d-e0dfe486025c" type="PRECONDITION:MISSING_ACCOUNTNO_SSN">
+				<ee:transform doc:name="Transform Message" doc:id="9d2d4c53-9568-4795-a915-539dc16de9fa">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Account number and SSN cannot be blank"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="Set Variable" doc:id="2e6708e7-b461-4430-bac5-59e32395912f" variableName="statusCode" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="48f1d0e1-77d8-4291-bbff-16ad631a032e" type="DATA:UNAUTHORIZED">
+				<ee:transform doc:name="Transform Message" doc:id="1601c19e-73ad-48a6-ace9-8d001e0ad688" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "User is not authenticated. Please verify SSN Number"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="401" doc:name="Set Variable" doc:id="18b6ad1e-c5c4-4db1-9830-1ae2d9adfd42" variableName="statusCode"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d18d18b2-fe6d-4900-9395-5a1da9d9eeb5" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="c3f0e332-2f7b-4fe1-bf67-13a16d0cd6b1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Some error occurred. Please verify your payload or other details."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>
