@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1c185f82-ee84-44ef-9fef-8516cb91c634" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="map1" doc:id="a0e25b80-c67b-44a2-b9a4-d78eb6ae2364" >
+		<http:listener doc:name="Listener" doc:id="3235eac9-e79b-4bac-8ced-ebc6ad403776" path="/demo" config-ref="HTTP_Listener_config" outputMimeType="application/json"/>
+		<ee:transform doc:name="Transform Message" doc:id="5f21abc3-7eb5-4207-888c-01393034a29b" >
+			<ee:message >
+				<ee:set-payload resource="map.dwl" />
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="map2" doc:id="ee3de126-39c6-4fda-a503-e8de5cf77735" >
+		<http:listener doc:name="Copy_of_Listener" doc:id="6c3dbfd2-5aca-4705-bbd7-b46bbd049b54" config-ref="HTTP_Listener_config" path="/demo1" outputMimeType="application/json" />
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="ca638118-20c1-4821-8631-6014807731de" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+items: payload.books map ((item, index) -> {
+      category: "book",
+      price: item.price as Number,
+      id: index,
+      properties: {
+        title: item.title,
+        author: item.author,
+        year: item.year as Number
+      }
+   }
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="MapObject" doc:id="f6906f53-3c12-4ef3-b41d-14f7c4a67c84" >
+		<http:listener doc:name="GET data" doc:id="4627d1a1-382b-4fe8-940d-fb5875c3894a" config-ref="HTTP_Listener_config" path="/mapobject" outputMimeType="application/json" />
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="7fafa970-b2ea-4827-9027-678053235897" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+items: payload.books map (item, index) -> {
+      book: item mapObject (value, key) -> {
+      (upper(key)): value
+      }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="Flattern" doc:id="ab0e185f-100d-4f85-a53c-0aa91ad96546" >
+		<http:listener doc:name="GetFlatternArray" doc:id="0b607c18-24db-4c2b-8d83-1b57feab2d7b" config-ref="HTTP_Listener_config" path="/flatternArray" outputMimeType="application/json" />
+		<ee:transform doc:name="Copy_of_Copy_of_Transform Message" doc:id="c762af06-643b-4855-85ae-12c2f08de8f3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var myData = [{name:1},{name:2},{name:3}]
+fun myExternalFunction(data): Array =
+    if(data.name == 1)
+        []
+    else if(data.name == 2)
+        [{name: 3}, {name:5}]
+    else
+        [data]
+---
+flatten(myData map ((item, index) -> myExternalFunction(item)))
+//myData flatMap ((item, index) -> myExternalFunction(item))
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="StringFunctions" doc:id="1338e350-41ef-405f-ad81-a08804b0bba4" >
+		<http:listener doc:name="StringFunctionTransformation" doc:id="cf93d9da-8d17-4b64-9cb2-fb4e4726638f" config-ref="HTTP_Listener_config" path="/stringFun" outputMimeType="application/json" />
+		<ee:transform doc:name="Transform Message" doc:id="ef211648-df4d-4c1d-ba32-5681f0c07f58" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	//reverse a string
+	firstName: payload.firstName[-1 to 0],
+	//sub string
+	firstName: payload.firstName[0 to 3],
+	//trim
+	firstName: trim(payload.firstName),
+	//upper case
+	firstName: upper(payload.firstName),
+	//lower case
+	firstName: lower(payload.firstName),
+	//sizeOf
+	firstName: sizeOf(payload.firstName),
+	//replace
+	firstName: payload.firstName replace "s" with "new"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="Date_DateFormat" doc:id="29188384-5749-4ba6-816a-97bb379989cf" >
+		<http:listener doc:name="Listener" doc:id="6df44601-1322-461a-9428-507083e76087" config-ref="HTTP_Listener_config" path="/datefun"/>
+		<ee:transform doc:name="Transform Message" doc:id="a0048860-47c7-4a4a-bca4-860f31dfc40b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var myDate = |2003-10-01T23:57:59.700-03:00|
+---
+{
+  year: myDate.year,
+  month: myDate.month,
+  day: myDate.day,
+  hour: myDate.hour,
+  minutes: myDate.minutes,
+  seconds: myDate.seconds,
+  milliseconds: myDate.milliseconds,
+  nanoseconds: myDate.nanoseconds,
+  quarter: myDate.quarter,
+  dayOfWeek: myDate.dayOfWeek,
+  dayOfYear: myDate.dayOfYear,
+  offsetSeconds: myDate.offsetSeconds
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="joinby" doc:id="268d604a-3cb4-46c6-af18-274f91c0c104" >
+		<http:listener doc:name="Copy_of_Listener" doc:id="c8a48479-be8c-474c-a91b-294727cb30ff" config-ref="HTTP_Listener_config" path="/joinby" />
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="608c0729-a4d4-43ec-9360-7c67d00899dd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	joinString: ["Shubham","Krishna","Agrawal"] joinBy "-"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="DW_core_functions" doc:id="bf616935-7b33-4047-853e-7a7ec57f9352" >
+		<http:listener doc:name="dwcorefunc" doc:id="9241a1fa-c50b-440d-942c-3ecda75797c9" config-ref="HTTP_Listener_config" path="/dwcore" />
+		<ee:transform doc:name="Copy_of_Copy_of_Transform Message" doc:id="dc297022-99a2-4695-a08c-9d3a244af955" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	//++ , --, abs, avg, ceil, contains, daysBetween, distinctBy, endsWith, filter, IsBlank, joinBy, min, max, etc.
+	result : [0, 1, 2] ++ ["a", "b", "c"],
+	joinString: ["Shubham","Krishna","Agrawal"] joinBy "-",
+	result : [0, 1, 1, 2, 3] -- [1,2],
+	result : abs(-20),
+	average : avg([100, 1000]),
+	value : ceil(1.5),
+	result : payload contains "shubham",
+	result : "Murali" endsWith "li"
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="DW_define_var" doc:id="f7c68cf3-a7e6-473b-8c16-d991db9dad6d" >
+		<http:listener doc:name="dw_var" doc:id="1b866a10-c0cf-4e17-aec8-9488315b912f" config-ref="HTTP_Listener_config" path="/dwvar" />
+		<ee:transform doc:name="Copy_of_Copy_of_Copy_of_Transform Message" doc:id="b974273e-731d-45c2-b0e4-cd7b7c9357eb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var a = "Ravi"
+var b = "raghav"
+var c = "ram"
+---
+{
+	
+	// implemeting vars
+	result : [0, 1, 2] ++ ["a", "b", "c"],
+	joinString: [a,"Krishna","Agrawal"] joinBy "-"
+	
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw_custom_function" doc:id="7b1703c0-24d7-4122-b199-d8451524a9bf" >
+		<http:listener doc:name="dw_custom_function" doc:id="9fa0c1f3-afaa-49b1-8d0d-fb3c2b6bff42" config-ref="HTTP_Listener_config" path="/dwcustfun" />
+		<ee:transform doc:name="custom function" doc:id="0f9313c4-df21-4e48-a021-25f0691d1da7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var flightNum = '737'
+
+
+fun getNumSeats(planeType : String) =
+	if(planeType contains(flightNum))
+		150
+	else
+		300
+---
+totalSeats : getNumSeats(payload.plane)
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

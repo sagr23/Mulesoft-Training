@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="inputtype" format="json">
+      <types:shape format="weave" example="examples/inputmap-4.json"><![CDATA[%dw 2.0
+
+type inputtype = {|
+  books: Array<{|    "-category": String,     title: {|      "-lang": String,       "#text": String    |},     author: String,     year: String,     price: String,     "-cover": String  |}>
+|} {"example": "{\\\"books\\\":[{\\\"-category\\\":\\\"cooking\\\",\\\"title\\\":{\\\"-lang\\\":\\\"en\\\",\\\"#text\\\":\\\"Everyday Italian\\\"},\\\"author\\\":\\\"Giada De Laurentiis\\\",\\\"year\\\":\\\"2005\\\",\\\"price\\\":\\\"30.00\\\"},{\\\"-category\\\":\\\"children\\\",\\\"title\\\":{\\\"-lang\\\":\\\"en\\\",\\\"#text\\\":\\\"Harry Potter\\\"},\\\"author\\\":\\\"J K. Rowling\\\",\\\"year\\\":\\\"2005\\\",\\\"price\\\":\\\"29.99\\\"},{\\\"-category\\\":\\\"web\\\",\\\"title\\\":{\\\"-lang\\\":\\\"en\\\",\\\"#text\\\":\\\"XQuery Kick Start\\\"},\\\"author\\\":[\\\"James McGovern\\\",\\\"Per Bothner\\\",\\\"Kurt Cagle\\\",\\\"James Linn\\\",\\\"Vaidyanathan Nagarajan\\\"],\\\"year\\\":\\\"2003\\\",\\\"price\\\":\\\"49.99\\\"},{\\\"-category\\\":\\\"web\\\",\\\"-cover\\\":\\\"paperback\\\",\\\"title\\\":{\\\"-lang\\\":\\\"en\\\",\\\"#text\\\":\\\"Learning XML\\\"},\\\"author\\\":\\\"Erik T. Ray\\\",\\\"year\\\":\\\"2003\\\",\\\"price\\\":\\\"39.95\\\"}]}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="outputtype" format="json">
+      <types:shape format="weave" example="examples/outputmap-1.json"><![CDATA[%dw 2.0
+
+type outputtype = {|
+  items: Array<{|    category: String,     price: Number {"typeId": "double"},     id: Number {"typeId": "int"},     properties: {|      title: {|        "-lang": String,         "#text": String      |},       author: String,       year: Number {"typeId": "int"}    |}  |}>
+|} {"example": "{\\\"items\\\":[{\\\"category\\\":\\\"book\\\",\\\"price\\\":30.00,\\\"id\\\":0,\\\"properties\\\":{\\\"title\\\":{\\\"-lang\\\":\\\"en\\\",\\\"#text\\\":\\\"Everyday Italian\\\"},\\\"author\\\":\\\"Giada De Laurentiis\\\",\\\"year\\\":2005}},{\\\"category\\\":\\\"book\\\",\\\"price\\\":29.99,\\\"id\\\":1,\\\"properties\\\":{\\\"title\\\":{\\\"-lang\\\":\\\"en\\\",\\\"#text\\\":\\\"Harry Potter\\\"},\\\"author\\\":\\\"J K. Rowling\\\",\\\"year\\\":2005}},{\\\"category\\\":\\\"book\\\",\\\"price\\\":49.99,\\\"id\\\":2,\\\"properties\\\":{\\\"title\\\":{\\\"-lang\\\":\\\"en\\\",\\\"#text\\\":\\\"XQuery Kick Start\\\"},\\\"author\\\":[\\\"James McGovern\\\",\\\"Per Bothner\\\",\\\"Kurt Cagle\\\",\\\"James Linn\\\",\\\"Vaidyanathan Nagarajan\\\"],\\\"year\\\":2003}},{\\\"category\\\":\\\"book\\\",\\\"price\\\":39.95,\\\"id\\\":3,\\\"properties\\\":{\\\"title\\\":{\\\"-lang\\\":\\\"en\\\",\\\"#text\\\":\\\"Learning XML\\\"},\\\"author\\\":\\\"Erik T. Ray\\\",\\\"year\\\":2003}}]}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="stringdemojson" format="json">
+      <types:shape format="weave" example="examples/stringfun.json"><![CDATA[%dw 2.0
+
+type stringdemojson = {|
+  firstName: String, 
+  lastName: String
+|} {"example": "{\\\"firstName\\\":\\\"shubham\\\",\\\"lastName\\\":\\\"sapient\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="customfunjson" format="json">
+      <types:shape format="weave" example="examples/customfun.json"><![CDATA[%dw 2.0
+
+type customfunjson = {| plane: Number {"typeId": "int"} |} {"example": "{\\\"plane\\\":738}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#5f21abc3-7eb5-4207-888c-01393034a29b"/>
+  <types:enrichment select="#ca638118-20c1-4821-8631-6014807731de"/>
+  <types:enrichment select="#ef211648-df4d-4c1d-ba32-5681f0c07f58">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="stringdemojson"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#0f9313c4-df21-4e48-a021-25f0691d1da7">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="customfunjson"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
