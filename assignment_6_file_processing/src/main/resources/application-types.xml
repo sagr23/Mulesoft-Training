@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="inputcsvfile" format="csv">
+      <types:shape format="weave" example="examples/employee.csv"><![CDATA[%dw 2.0
+
+type inputcsvfile = Array<{|  Emp_ID: String,   name: String,   email: String,   desigmation: String|}>
+
+]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+      </types:properties>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#66f55cab-2a6b-415c-9a28-7722a1cd2624">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="inputcsvfile"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#ebdbfcdc-c59e-4dfb-b6d9-e0a84bc5d0b8">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="inputcsvfile"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
